@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #blocked-users, #active-users {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        #blocked-users th, #blocked-users td,
+        #active-users th, #active-users td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        #blocked-users th, #active-users th {
+            background-color: #007bff;
+            color: white;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Panou de Administrare Chat</h1>
+
+    <h2>Utilizatori Activi</h2>
+    <table id="active-users">
+        <thead>
+            <tr>
+                <th>IP Utilizator</th>
+                <th>Nume Utilizator</th>
+                <th>Acțiune</th>
+            </tr>
+        </thead>
+        <tbody id="active-users-list">
+            <!-- Lista de utilizatori activi se va încărca aici -->
+        </tbody>
+    </table>
+
+    <h2>Utilizatori Blocați</h2>
+    <table id="blocked-users">
+        <thead>
+            <tr>
+                <th>IP Utilizator</th>
+                <th>Nume Utilizator</th>
+                <th>Acțiune</th>
+            </tr>
+        </thead>
+        <tbody id="blocked-users-list">
+            <!-- Lista de IP-uri blocate se va încărca aici -->
+        </tbody>
+    </table>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        // Funcția de actualizare a listei de utilizatori activi
+        socket.on('active users', function(users) {
+            const tableBody = document.getElementById('active-users-list');
+            tableBody.innerHTML = ''; // Resetează lista
+            Object.keys(users).forEach(ip => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${ip}</td>
+                                  <td>${users[ip]}</td>
+                                  <td><button onclick="blockUser('${ip}')">Blochează</button></td>`;
+                tableBody.appendChild(row);
+            });
+        });
+
+        // Funcția de actualizare a listei de IP-uri blocate
+        socket.on('blocked ips', function(ips) {
+            const tableBody = document.getElementById('blocked-users-list');
+            tableBody.innerHTML = ''; // Resetează lista
+            ips.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${entry.ip}</td>
+                                  <td>${entry.username}</td>
+                                  <td><button onclick="unblockIP('${entry.ip}')">Deblochează</button></td>`;
+                tableBody.appendChild(row);
+            });
+        });
+
+        // Funcția pentru a bloca un IP
+        function blockUser(ip) {
+            if (confirm(`Ești sigur că vrei să blochezi utilizatorul cu IP-ul ${ip}?`)) {
+                socket.emit('block ip', ip);
+            }
+        }
+
+        // Funcția pentru a debloca un IP
+        function unblockIP(ip) {
+            if (confirm(`Ești sigur că vrei să deblochezi utilizatorul cu IP-ul ${ip}?`)) {
+                socket.emit('unblock ip', ip);
+            }
+        }
+
+        // Obține lista IP-uri blocate și utilizatori activi la încărcarea paginii
+        socket.emit('get blocked ips');
+        socket.emit('get active users');
+    </script>
+</body>
+</html
